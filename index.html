@@ -1,15 +1,533 @@
-<!doctype html><html lang="uk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102139"><link rel="manifest" href="manifest.webmanifest"><title>BRAIN ANALYTICS V4</title><style>
-:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#e9f0fa;background:#0b1524}*{box-sizing:border-box}body{margin:0}.wrap{max-width:960px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand{font-size:20px;font-weight:800}.sub{font-size:12px;color:#94a7bf}.pill{border:1px solid #39516f;border-radius:18px;padding:7px 10px;color:#a7bbd4;font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:#13243a;border:1px solid #28405c;border-radius:16px;padding:15px;margin-top:14px}.card h3{margin:0 0 12px;font-size:15px;color:#b9cbe1}.big{font-size:28px;font-weight:750}.muted{color:#9aadc5;font-size:12px}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0}button,select{border:1px solid #39516f;background:#172d47;color:#e9f0fa;border-radius:10px;padding:10px 13px;font:inherit}button.active{background:#2e67a0;border-color:#7bbaff}button:focus-visible{outline:2px solid #8cc7ff}.positive{color:#5cddb0}.negative{color:#ff9b9b}.neutral{color:#ffcd79}canvas{width:100%;height:240px;display:block}.metric{font-size:20px;font-weight:700;margin:6px 0}.status{font-size:13px;line-height:1.5}.levels{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.levels div{padding:10px;background:#0e1d30;border-radius:10px}.footer{margin:20px 0 45px;color:#9aadc5;font-size:12px;line-height:1.6}a{color:#9dd1ff}@media(min-width:680px){.grid{grid-template-columns:repeat(4,1fr)}canvas{height:330px}}@media(max-width:350px){.big{font-size:22px}.wrap{padding:12px}}
-</style></head><body><main class="wrap"><header class="top"><div><div class="brand">BRAIN <span style="color:#7ab8ff">ANALYTICS V4</span></div><div class="sub">Аналітичний центр · тільки ринкові дані</div></div><div class="pill" id="connection">Підключення…</div></header>
-<div class="controls" id="symbols"><button class="active" data-symbol="BTCUSDT">BTC/USDT</button><button data-symbol="ETHUSDT">ETH/USDT</button><button data-symbol="SOLUSDT">SOL/USDT</button></div><div class="controls" id="intervals"><button data-interval="5m">5 хв</button><button class="active" data-interval="15m">15 хв</button><button data-interval="1h">1 год</button><button data-interval="4h">4 год</button><button id="refresh">↻ Оновити</button></div>
-<section class="grid"><div class="card"><h3>Поточна ціна</h3><div class="big" id="price">—</div><div class="muted" id="updated">Очікуємо дані</div></div><div class="card"><h3>Напрямок</h3><div class="metric" id="direction">—</div><div class="muted">EMA 9 / EMA 21</div></div><div class="card"><h3>RSI (14)</h3><div class="metric" id="rsi">—</div><div class="muted" id="rsiInfo">Індикатор імпульсу</div></div><div class="card"><h3>Мінливість</h3><div class="metric" id="volatility">—</div><div class="muted">ATR (14) / ціна</div></div></section>
-<section class="card"><h3>Ціна · останні 100 закритих свічок</h3><canvas id="chart" role="img" aria-label="Графік історичних цін"></canvas><div class="muted" id="chartInfo">Завантаження…</div></section>
-<section class="card"><h3>Цінові зони (історичні, не торгові команди)</h3><div class="levels"><div><div class="muted">Підтримка · мінімум 20 свічок</div><div class="metric" id="support">—</div></div><div><div class="muted">Опір · максимум 20 свічок</div><div class="metric" id="resistance">—</div></div></div></section>
-<section class="card"><h3>Оцінка ринкового стану</h3><div class="status" id="analysis">Завантажуємо історію цін…</div></section>
-<section class="card"><h3>Джерело та перевірка</h3><div class="status" id="source">Публічні свічки Binance Spot API. Жодних ключів чи доступу до рахунку не потрібно.</div></section>
-<div class="footer">Інформаційна аналітика, не персональна рекомендація. Жоден індикатор не гарантує напрямок ціни чи прибуток. Ця версія не надсилає наказів на біржу та не підключена до Supabase. Для роботи потрібен інтернет; доступ до API може залежати від мережі та регіону.</div></main><script>
-'use strict';let symbol='BTCUSDT',interval='15m',lastCloses=[];const $=id=>document.getElementById(id);const fmt=n=>Number.isFinite(n)?n.toLocaleString('en-US',{maximumFractionDigits:n>=100?2:n>=1?4:6}):'—';function ema(a,p){let k=2/(p+1),e=a[0];return a.map((v,i)=>(e=i?e+(v-e)*k:v))}function rsi(a,p=14){if(a.length<=p)return NaN;let g=0,l=0;for(let i=1;i<=p;i++){let d=a[i]-a[i-1];g+=Math.max(0,d);l+=Math.max(0,-d)}g/=p;l/=p;for(let i=p+1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(p-1)+Math.max(0,d))/p;l=(l*(p-1)+Math.max(0,-d))/p}return l===0?(g===0?50:100):100-100/(1+g/l)}function atr(rows,p=14){if(rows.length<p+1)return NaN;let tr=[];for(let i=1;i<rows.length;i++){let c=rows[i],prev=rows[i-1];tr.push(Math.max(c.h-c.l,Math.abs(c.h-prev.c),Math.abs(c.l-prev.c)))}let v=tr.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=p;i<tr.length;i++)v=(v*(p-1)+tr[i])/p;return v}
-function draw(values){const cv=$('chart'),rect=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=Math.max(260,rect.width),h=Math.max(220,rect.height);cv.width=w*dpr;cv.height=h*dpr;let ctx=cv.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);if(!values.length)return;let min=Math.min(...values),max=Math.max(...values),range=max-min||1;let x=i=>12+i*(w-24)/(values.length-1),y=v=>h-22-(v-min)/range*(h-42);ctx.strokeStyle='#2b405c';ctx.lineWidth=1;for(let j=0;j<4;j++){let yy=20+j*(h-42)/3;ctx.beginPath();ctx.moveTo(12,yy);ctx.lineTo(w-12,yy);ctx.stroke()}ctx.beginPath();values.forEach((v,i)=>i?ctx.lineTo(x(i),y(v)):ctx.moveTo(x(i),y(v)));ctx.strokeStyle='#7fbaff';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#b8c9de';ctx.font='11px system-ui';ctx.fillText(fmt(max),14,15);ctx.fillText(fmt(min),14,h-5)}
-async function load(){const requestedSymbol=symbol,requestedInterval=interval;$('connection').textContent='Завантаження…';try{let url=`https://api.binance.com/api/v3/klines?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=121`;let res=await fetch(url,{cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);let raw=await res.json();if(!Array.isArray(raw)||raw.length<30)throw Error('Недостатньо свічок');if(requestedSymbol!==symbol||requestedInterval!==interval)return;let rows=raw.filter(k=>Number(k[6])<Date.now()).map(k=>({o:+k[1],h:+k[2],l:+k[3],c:+k[4],t:+k[0]}));if(rows.length<30)throw Error('Недостатньо закритих свічок');let closes=rows.map(r=>r.c),e9=ema(closes,9),e21=ema(closes,21),v=rsi(closes),a=atr(rows),price=closes.at(-1),sup=Math.min(...rows.slice(-20).map(r=>r.l)),resist=Math.max(...rows.slice(-20).map(r=>r.h));let up=e9.at(-1)>e21.at(-1),gap=Math.abs(e9.at(-1)-e21.at(-1))/price*100;lastCloses=closes.slice(-100);$('price').textContent=fmt(price);$('updated').textContent='Закрита свічка · '+new Date(rows.at(-1).t).toLocaleString('uk-UA');$('direction').textContent=gap<0.08?'НЕВИЗНАЧЕНО':up?'ВИСХІДНИЙ':'НИЗХІДНИЙ';$('direction').className='metric '+(gap<0.08?'neutral':up?'positive':'negative');$('rsi').textContent=v.toFixed(1);$('rsiInfo').textContent=v>70?'Високий RSI':v<30?'Низький RSI':'Нейтральний діапазон';$('volatility').textContent=(a/price*100).toFixed(2)+'%';$('support').textContent=fmt(sup);$('resistance').textContent=fmt(resist);$('analysis').textContent=`EMA 9 ${up?'вище':'нижче'} EMA 21; відносна різниця ${gap.toFixed(2)}%. RSI ${v.toFixed(1)}. Історичний діапазон останніх 20 свічок: ${fmt(sup)}–${fmt(resist)} USDT. Це опис поточного стану, а не прогноз із підтвердженою ймовірністю.`;$('chartInfo').textContent=`${requestedSymbol} · ${requestedInterval} · історія закритих свічок`;$('connection').textContent='Дані Binance';$('source').textContent='Binance Spot public API · отримано '+new Date().toLocaleString('uk-UA')+'. API-ключі не використовуються.';draw(lastCloses)}catch(err){$('connection').textContent='Помилка з’єднання';$('analysis').textContent='Не вдалося отримати дані. Перевір інтернет або доступність Binance API. Дані не підмінюються вигаданими.';$('source').textContent='Помилка: '+String(err.message||err);$('chartInfo').textContent='Немає актуальних даних';lastCloses=[];draw([])}}
-document.querySelectorAll('[data-symbol]').forEach(b=>b.addEventListener('click',()=>{symbol=b.dataset.symbol;document.querySelectorAll('[data-symbol]').forEach(x=>x.classList.toggle('active',x===b));load()}));document.querySelectorAll('[data-interval]').forEach(b=>b.addEventListener('click',()=>{interval=b.dataset.interval;document.querySelectorAll('[data-interval]').forEach(x=>x.classList.toggle('active',x===b));load()}));$('refresh').addEventListener('click',load);window.addEventListener('resize',()=>draw(lastCloses));if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});load();setInterval(load,60000);
-</script></body></html>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#102139">
+<link rel="manifest" href="manifest.webmanifest">
+<title>BRAIN ANALYTICS V4.1</title>
+
+<style>
+:root {
+  font-family: system-ui, Arial, sans-serif;
+  background: #0b1524;
+  color: #e9f0fa;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 960px; margin: auto; padding: 16px; }
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+h1 { font-size: 21px; margin: 0; }
+h2 { font-size: 16px; margin: 0 0 14px; color: #bdd3ee; }
+small, .muted { color: #99aec9; font-size: 12px; }
+.card {
+  background: #13243a;
+  border: 1px solid #29415f;
+  border-radius: 15px;
+  padding: 15px;
+  margin-top: 14px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.grid .card { margin-top: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+button {
+  background: #172d47;
+  color: #e9f0fa;
+  border: 1px solid #39516f;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+button.active { background: #2865a2; border-color: #82c0ff; }
+.value { font-size: 23px; font-weight: bold; margin: 8px 0; }
+.positive { color: #60ddb1; }
+.negative { color: #ff9d9d; }
+.neutral { color: #ffd080; }
+canvas { width: 100%; height: 240px; display: block; }
+.levels { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.levels > div { background: #0d1d30; border-radius: 10px; padding: 10px; }
+.status { line-height: 1.6; font-size: 13px; }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 10px 7px; border-bottom: 1px solid #29415f; text-align: left; }
+th { color: #a8c4e5; }
+.pill {
+  border: 1px solid #39516f;
+  border-radius: 20px;
+  padding: 7px 9px;
+  font-size: 12px;
+  color: #a9c6e8;
+}
+footer { color: #99aec9; font-size: 12px; line-height: 1.6; margin: 20px 0 35px; }
+@media(min-width:680px) {
+  .grid { grid-template-columns: repeat(4,1fr); }
+  canvas { height: 330px; }
+}
+</style>
+</head>
+
+<body>
+<main>
+<header>
+  <div>
+    <h1>BRAIN <span style="color:#7ab8ff">ANALYTICS V4.1</span></h1>
+    <small>Аналітичний центр · Binance + Supabase</small>
+  </div>
+  <div class="pill" id="connection">Завантаження…</div>
+</header>
+
+<div class="controls" id="symbols">
+  <button class="active" data-symbol="BTCUSDT">BTC/USDT</button>
+  <button data-symbol="ETHUSDT">ETH/USDT</button>
+  <button data-symbol="SOLUSDT">SOL/USDT</button>
+</div>
+
+<div class="controls" id="intervals">
+  <button data-interval="5m">5 хв</button>
+  <button class="active" data-interval="15m">15 хв</button>
+  <button data-interval="1h">1 год</button>
+  <button data-interval="4h">4 год</button>
+  <button id="refresh">↻ Оновити</button>
+</div>
+
+<section class="grid">
+  <div class="card">
+    <h2>Ціна закриття</h2>
+    <div class="value" id="price">—</div>
+    <small id="updated">Очікуємо дані</small>
+  </div>
+  <div class="card">
+    <h2>Напрямок EMA</h2>
+    <div class="value" id="direction">—</div>
+    <small>EMA 9 / EMA 21</small>
+  </div>
+  <div class="card">
+    <h2>RSI (14)</h2>
+    <div class="value" id="rsi">—</div>
+    <small id="rsiInfo">Імпульс</small>
+  </div>
+  <div class="card">
+    <h2>Мінливість</h2>
+    <div class="value" id="volatility">—</div>
+    <small>ATR (14) / ціна</small>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Графік · останні 100 закритих свічок</h2>
+  <canvas id="chart"></canvas>
+  <small id="chartInfo">Завантаження…</small>
+</section>
+
+<section class="card">
+  <h2>Історичні цінові зони</h2>
+  <div class="levels">
+    <div>
+      <small>Підтримка</small>
+      <div class="value" id="support">—</div>
+    </div>
+    <div>
+      <small>Опір</small>
+      <div class="value" id="resistance">—</div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Оцінка ринкового стану</h2>
+  <div class="status" id="analysis">Очікуємо дані…</div>
+</section>
+
+<section class="card">
+  <h2>Журнал прогнозів · Supabase</h2>
+  <div class="status" id="dbStatus">Підключення до бази…</div>
+  <div class="controls">
+    <button id="reloadPredictions">↻ Оновити журнал</button>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Час</th>
+          <th>Монета</th>
+          <th>Прогноз</th>
+          <th>Ціна</th>
+          <th>Статус</th>
+        </tr>
+      </thead>
+      <tbody id="predictions"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Джерела даних</h2>
+  <div class="status" id="source">
+    Binance Spot API · Supabase REST API
+  </div>
+</section>
+
+<footer>
+  BRAIN ANALYTICS V4.1 — інформаційний аналіз ринку.
+  Дані не гарантують майбутній напрямок ціни.
+  Додаток не здійснює торгових операцій.
+  Журнал прогнозів працює лише в режимі читання.
+</footer>
+</main>
+
+<script>
+"use strict";
+
+const SUPABASE_URL =
+  "https://oamilsvswtuyusoxmdly.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_7FJ0GNbXhhkBAVtKS9WuCg_xSKEzFW-";
+
+let symbol = "BTCUSDT";
+let interval = "15m";
+let lastCloses = [];
+let requestNumber = 0;
+
+const $ = id => document.getElementById(id);
+
+const fmt = n =>
+  Number.isFinite(n)
+    ? n.toLocaleString("en-US", {
+        maximumFractionDigits: n >= 100 ? 2 : n >= 1 ? 4 : 6
+      })
+    : "—";
+
+function ema(values, period) {
+  const k = 2 / (period + 1);
+  let current = values[0];
+  return values.map((v, i) => {
+    current = i ? current + (v - current) * k : v;
+    return current;
+  });
+}
+
+function rsi(values, period = 14) {
+  if (values.length <= period) return NaN;
+
+  let gains = 0, losses = 0;
+
+  for (let i = 1; i <= period; i++) {
+    const change = values[i] - values[i - 1];
+    gains += Math.max(0, change);
+    losses += Math.max(0, -change);
+  }
+
+  gains /= period;
+  losses /= period;
+
+  for (let i = period + 1; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+    gains = (gains * (period - 1) + Math.max(0, change)) / period;
+    losses = (losses * (period - 1) + Math.max(0, -change)) / period;
+  }
+
+  if (losses === 0) return gains === 0 ? 50 : 100;
+  return 100 - 100 / (1 + gains / losses);
+}
+
+function atr(rows, period = 14) {
+  if (rows.length < period + 1) return NaN;
+
+  const ranges = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    const c = rows[i], prev = rows[i - 1];
+    ranges.push(Math.max(
+      c.h - c.l,
+      Math.abs(c.h - prev.c),
+      Math.abs(c.l - prev.c)
+    ));
+  }
+
+  let result =
+    ranges.slice(0, period).reduce((a, b) => a + b, 0) / period;
+
+  for (let i = period; i < ranges.length; i++) {
+    result = (result * (period - 1) + ranges[i]) / period;
+  }
+
+  return result;
+}
+
+function draw(values) {
+  const canvas = $("chart");
+  const rect = canvas.getBoundingClientRect();
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(260, rect.width);
+  const height = Math.max(220, rect.height);
+
+  canvas.width = width * ratio;
+  canvas.height = height * ratio;
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio, ratio);
+  ctx.clearRect(0, 0, width, height);
+
+  if (values.length < 2) return;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const x = i => 12 + i * (width - 24) / (values.length - 1);
+  const y = v => height - 22 - (v - min) / range * (height - 42);
+
+  ctx.strokeStyle = "#2b405c";
+  ctx.lineWidth = 1;
+
+  for (let j = 0; j < 4; j++) {
+    const yy = 20 + j * (height - 42) / 3;
+    ctx.beginPath();
+    ctx.moveTo(12, yy);
+    ctx.lineTo(width - 12, yy);
+    ctx.stroke();
+  }
+
+  ctx.beginPath();
+
+  values.forEach((v, i) => {
+    if (i) ctx.lineTo(x(i), y(v));
+    else ctx.moveTo(x(i), y(v));
+  });
+
+  ctx.strokeStyle = "#7fbaff";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "#b8c9de";
+  ctx.font = "11px system-ui";
+  ctx.fillText(fmt(max), 14, 15);
+  ctx.fillText(fmt(min), 14, height - 5);
+}
+
+async function loadMarket() {
+  const currentRequest = ++requestNumber;
+  const selectedSymbol = symbol;
+  const selectedInterval = interval;
+
+  $("connection").textContent = "Завантаження…";
+
+  try {
+    const url =
+      "https://api.binance.com/api/v3/klines" +
+      "?symbol=" + encodeURIComponent(selectedSymbol) +
+      "&interval=" + encodeURIComponent(selectedInterval) +
+      "&limit=121";
+
+    const response = await fetch(url, { cache: "no-store" });
+
+    if (!response.ok) throw new Error("Binance HTTP " + response.status);
+
+    const raw = await response.json();
+
+    if (!Array.isArray(raw)) throw new Error("Некоректні дані Binance");
+
+    if (currentRequest !== requestNumber) return;
+
+    const rows = raw
+      .filter(k => Number(k[6]) < Date.now())
+      .map(k => ({
+        h: Number(k[2]),
+        l: Number(k[3]),
+        c: Number(k[4]),
+        t: Number(k[0])
+      }));
+
+    if (rows.length < 30) throw new Error("Недостатньо свічок");
+
+    const closes = rows.map(r => r.c);
+    const e9 = ema(closes, 9).at(-1);
+    const e21 = ema(closes, 21).at(-1);
+    const price = closes.at(-1);
+    const r = rsi(closes);
+    const a = atr(rows);
+    const gap = Math.abs(e9 - e21) / price * 100;
+    const up = e9 > e21;
+
+    const support = Math.min(...rows.slice(-20).map(r => r.l));
+    const resistance = Math.max(...rows.slice(-20).map(r => r.h));
+
+    lastCloses = closes.slice(-100);
+
+    $("price").textContent = fmt(price);
+    $("updated").textContent =
+      "Закрита свічка · " +
+      new Date(rows.at(-1).t).toLocaleString("uk-UA");
+
+    $("direction").textContent =
+      gap < 0.08 ? "НЕВИЗНАЧЕНО" :
+      up ? "ВИСХІДНИЙ" : "НИЗХІДНИЙ";
+
+    $("direction").className =
+      "value " + (gap < 0.08 ? "neutral" : up ? "positive" : "negative");
+
+    $("rsi").textContent = r.toFixed(1);
+    $("rsiInfo").textContent =
+      r > 70 ? "Високий RSI" :
+      r < 30 ? "Низький RSI" : "Нейтральний діапазон";
+
+    $("volatility").textContent = (a / price * 100).toFixed(2) + "%";
+    $("support").textContent = fmt(support);
+    $("resistance").textContent = fmt(resistance);
+
+    $("analysis").textContent =
+      "EMA 9 " + (up ? "вище" : "нижче") +
+      " EMA 21. Різниця: " + gap.toFixed(2) +
+      "%. RSI: " + r.toFixed(1) +
+      ". Історичний діапазон: " +
+      fmt(support) + "–" + fmt(resistance) +
+      " USDT. Це оцінка поточного стану, а не гарантований прогноз.";
+
+    $("chartInfo").textContent =
+      selectedSymbol + " · " + selectedInterval +
+      " · 100 останніх закритих свічок";
+
+    $("connection").textContent = "Binance OK";
+    $("source").textContent =
+      "Binance Spot API · оновлено " +
+      new Date().toLocaleString("uk-UA") +
+      ". Supabase: журнал прогнозів у режимі читання.";
+
+    draw(lastCloses);
+
+  } catch (error) {
+    if (currentRequest !== requestNumber) return;
+    $("connection").textContent = "Помилка Binance";
+    $("analysis").textContent =
+      "Не вдалося отримати ринкові дані: " + error.message;
+    $("chartInfo").textContent = "Немає актуальних даних";
+    lastCloses = [];
+    draw([]);
+  }
+}
+
+async function loadPredictions() {
+  const status = $("dbStatus");
+  const tbody = $("predictions");
+
+  status.textContent = "Завантаження прогнозів…";
+  tbody.replaceChildren();
+
+  try {
+    const url =
+      SUPABASE_URL +
+      "/rest/v1/brain_v4_predictions" +
+      "?select=id,symbol,timeframe,prediction,reference_price," +
+      "validation_status,predicted_at" +
+      "&order=predicted_at.desc&limit=30";
+
+    const response = await fetch(url, {
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Accept": "application/json"
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error("Supabase HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error("Некоректна відповідь Supabase");
+    }
+
+    if (!data.length) {
+      status.textContent =
+        "Supabase підключено. Прогнозів поки немає.";
+      return;
+    }
+
+    status.textContent =
+      "Supabase підключено · останні " + data.length + " записів";
+
+    data.forEach(item => {
+      const row = document.createElement("tr");
+
+      const cells = [
+        item.predicted_at
+          ? new Date(item.predicted_at).toLocaleString("uk-UA")
+          : "—",
+        (item.symbol || "—") + " · " + (item.timeframe || ""),
+        item.prediction || "—",
+        fmt(Number(item.reference_price)),
+        item.validation_status || "—"
+      ];
+
+      cells.forEach(value => {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.appendChild(cell);
+      });
+
+      tbody.appendChild(row);
+    });
+
+  } catch (error) {
+    status.textContent =
+      "Помилка підключення Supabase: " + error.message;
+  }
+}
+
+document.querySelectorAll("[data-symbol]").forEach(button => {
+  button.addEventListener("click", () => {
+    symbol = button.dataset.symbol;
+
+    document.querySelectorAll("[data-symbol]").forEach(b => {
+      b.classList.toggle("active", b === button);
+    });
+
+    loadMarket();
+  });
+});
+
+document.querySelectorAll("[data-interval]").forEach(button => {
+  button.addEventListener("click", () => {
+    interval = button.dataset.interval;
+
+    document.querySelectorAll("[data-interval]").forEach(b => {
+      b.classList.toggle("active", b === button);
+    });
+
+    loadMarket();
+  });
+});
+
+$("refresh").addEventListener("click", () => {
+  loadMarket();
+  loadPredictions();
+});
+
+$("reloadPredictions").addEventListener("click", loadPredictions);
+
+window.addEventListener("resize", () => draw(lastCloses));
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+loadMarket();
+loadPredictions();
+
+setInterval(loadMarket, 60000);
+setInterval(loadPredictions, 60000);
+</script>
+</body>
+</html>
