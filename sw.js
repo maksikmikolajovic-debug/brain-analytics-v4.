@@ -1,1 +1,24 @@
-const CACHE='brain-v4-static-1';const ASSETS=['./','./index.html','./manifest.webmanifest','./icon.svg'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==self.location.origin)return;e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});
+"use strict";
+
+self.addEventListener("install", event => {
+  event.waitUntil(self.skipWaiting());
+});
+
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+
+      await Promise.all(
+        names
+          .filter(name => /brain/i.test(name))
+          .map(name => caches.delete(name))
+      );
+
+      await self.clients.claim();
+    })()
+  );
+});
+
+// Запити йдуть напряму в мережу.
+// Сторінка та ринкові дані не кешуються цим worker.
