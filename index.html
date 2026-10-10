@@ -1699,7 +1699,30 @@ setInterval(() => {
     $("openTrade").disabled = true;
   }
 }, 1000);
+async function wakeServer() {
+  if (document.hidden) return;
 
+  try {
+    await fetch(
+      "https://brain-v5-server.onrender.com/health",
+      {
+        mode: "no-cors",
+        cache: "no-store",
+        signal: AbortSignal.timeout(90000)
+      }
+    );
+  } catch (error) {
+    console.warn("Запит до Render:", error.message);
+  }
+}
+
+wakeServer();
+
+setInterval(wakeServer, 5 * 60 * 1000);
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) wakeServer();
+});
 // КІНЕЦЬ ЧАСТИНИ 5
 </script>
 
