@@ -1,1 +1,20 @@
-{"name":"BRAIN ANALYTICS V4","short_name":"BRAIN V4","description":"Мобільна аналітика ринку Binance без торгівлі","start_url":"./","display":"standalone","background_color":"#0b1524","theme_color":"#102139","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+
+{
+  "name": "ПРОВИДЕЦЬ AI",
+  "short_name": "ПРОВИДЕЦЬ",
+  "description": "Інтелектуальна аналітика ф'ючерсного ринку та перевірка прогнозів",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1524",
+  "theme_color": "#102139",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
