@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#102139">
+<meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
 <title>ПРОВИДЕЦЬ AI V5.3 · Futures</title>
 <style>
@@ -108,6 +108,36 @@ a { color: #82c0ff; }
   .value { font-size: 19px; }
   .formgrid { grid-template-columns: 1fr; }
 }
+
+/* ПРОВИДЕЦЬ AI — approved mobile visual system, UI only */
+:root{background:#050b13;color:#f0f5ff;font-family:Inter,system-ui,-apple-system,Arial,sans-serif}
+body{background:radial-gradient(ellipse at 50% -190px,#11365d 0%,#050b13 470px);min-height:100vh}
+main{max-width:1050px;padding:14px 14px 106px}
+header{position:sticky;top:0;z-index:12;margin:-14px -14px 0;padding:16px 17px 12px;background:rgba(5,11,19,.94);backdrop-filter:blur(15px);border-bottom:1px solid #142438;justify-content:center;text-align:center;min-height:76px}
+header h1{font-size:21px;letter-spacing:.15px;font-weight:780}header small{display:block;margin-top:3px;letter-spacing:1.5px;font-size:9px;color:#8294aa}header .pill{position:absolute;right:14px;top:22px;font-size:9px;padding:5px 7px;max-width:82px;overflow:hidden}
+header:before{content:'☰';position:absolute;left:17px;top:22px;font-size:21px;color:#a9bed5}
+.card{background:linear-gradient(145deg,#0d1927,#08121e);border:1px solid #203047;border-radius:15px;box-shadow:0 5px 20px #0003;padding:14px;margin-top:12px}
+.card h2{font-size:14px;font-weight:750;color:#e3edf9;margin-bottom:11px}
+.card h3{color:#d7e6f9}
+.grid{gap:8px}.grid .card{min-height:100px;padding:13px;background:linear-gradient(145deg,#0e1d2e,#080f19)}
+.grid .card h2{font-size:11px;color:#92a8c0}.value{font-weight:760}
+.controls{gap:7px;margin:12px 0}button,input,select,textarea{background:#111e2d;border:1px solid #203249;color:#e4efff;border-radius:11px}button{transition:background .15s,border-color .15s}button.active,button:hover{background:#087edb;border-color:#128ff4;color:white}
+[data-tab]{white-space:nowrap;font-size:13px;padding:11px 13px}
+.top-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:10px 0 7px;margin:0}.top-tabs::-webkit-scrollbar{display:none}
+#symbols{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none}#symbols button{white-space:nowrap;font-size:13px}
+#connection{font-size:10px;color:#6de0ad;border-color:#234e49;white-space:nowrap}
+#chart,#candleChart{height:315px;background:#050d15;border:1px solid #16263a;border-radius:10px}
+.pill{background:#0c1725}.tablewrap{border-radius:10px}th,td{border-bottom:1px solid #1d2b3b}th{color:#8ea7c1}
+.status,small,.muted{color:#91a7c0}#candleStatus{display:block;line-height:1.5;margin-top:9px}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:25;background:rgba(5,12,21,.97);border-top:1px solid #1b2e43;display:flex;justify-content:space-around;gap:2px;padding:9px 6px max(10px,env(safe-area-inset-bottom));box-shadow:0 -8px 25px #0007}
+.bottom-nav button{flex:1;min-width:0;border:0;background:transparent;padding:6px 2px;border-radius:11px;color:#9cb0c8;font-size:10px;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bottom-nav button .nav-icon{font-size:20px;line-height:25px}.bottom-nav button.active{color:#17a9ff;background:#0b2741}
+.section-intro{display:flex;align-items:center;justify-content:space-between;margin:16px 1px 8px;gap:8px}.section-intro strong{font-size:15px}.section-intro span{font-size:11px;color:#83a5c4}
+.market-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}.market-stat{background:#0b1724;border:1px solid #1e3449;border-radius:12px;padding:12px 9px;min-height:82px}.market-stat span{display:block;color:#8ea7c1;font-size:10px}.market-stat strong{display:block;margin-top:7px;font-size:19px;color:#f1f6ff}.market-stat strong.blue{color:#23adff}
+#catalogCard{margin-top:18px}
+#market>.grid{margin-top:12px}
+@media(min-width:680px){main{padding-bottom:105px}.bottom-nav{left:50%;transform:translateX(-50%);max-width:1050px}#chart,#candleChart{height:390px}}
+@media(max-width:390px){header h1{font-size:18px}.market-stat strong{font-size:16px}.market-stat{padding:10px 7px}main{padding-left:10px;padding-right:10px}}
 </style>
 </head>
 <body>
@@ -122,7 +152,7 @@ a { color: #82c0ff; }
 
 <div id="toast" class="hidden" role="status"></div>
 
-<div class="controls">
+<div class="controls top-tabs">
   <button class="active" data-tab="market">Ринок і прогноз</button>
   <button data-tab="scanner">Сканер TOP-5</button>
   <button data-tab="smc">Smart Money / USD</button>
@@ -139,7 +169,7 @@ a { color: #82c0ff; }
   <div class="pill" id="connection">Підключення…</div>
 </div>
 
-<section class="card">
+<section class="card" id="catalogCard">
   <h2>Каталог Binance USDT-M</h2>
   <label>Пошук ф’ючерсної пари
     <input id="symbolSearch" placeholder="Наприклад, XRP або DOGE" autocomplete="off">
@@ -154,6 +184,12 @@ a { color: #82c0ff; }
   <div class="tablewrap"><table><thead><tr><th>Пара</th><th>Ціна</th><th>Зміна 24 год</th><th>Обсяг 24 год, USDT</th></tr></thead><tbody id="topFive"></tbody></table></div>
 </section>
 <div id="market" class="tab active">
+<div class="section-intro"><strong>Огляд ринку</strong><span>Публічні ринкові дані · симуляція</span></div>
+<div class="market-stats" aria-label="Огляд модулів">
+ <div class="market-stat"><span>Активні монети</span><strong class="blue">TOP 5</strong></div>
+ <div class="market-stat"><span>Smart Money</span><strong>SMC</strong></div>
+ <div class="market-stat"><span>Ліквідації</span><strong>USD</strong></div>
+</div>
 <section class="grid">
   <div class="card">
     <h2>Binance · ціна</h2>
@@ -500,6 +536,13 @@ a { color: #82c0ff; }
   не включені.
 </footer>
 </main>
+<nav class="bottom-nav" aria-label="Основна навігація">
+ <button data-tab="market" class="active" type="button"><span class="nav-icon">⌂</span>Ринок</button>
+ <button data-tab="scanner" type="button"><span class="nav-icon">▥</span>TOP-5</button>
+ <button data-tab="market" data-jump="chart" type="button"><span class="nav-icon">▤</span>Графік</button>
+ <button data-tab="smc" type="button"><span class="nav-icon">◇</span>SMC</button>
+ <button data-tab="history" type="button"><span class="nav-icon">☷</span>Історія</button>
+</nav>
 <!-- КІНЕЦЬ ЧАСТИНИ 2 -->
   <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -816,6 +859,7 @@ function tab(name) {
     );
   });
 
+  document.querySelectorAll(".bottom-nav button").forEach(item => item.classList.toggle("active", item.dataset.tab === name && !item.dataset.jump));
   if (name === "market") draw(lastCloses);
   if (name === "scanner") loadScanner();
   if (name === "smc") loadExtra();
@@ -1903,8 +1947,25 @@ for (const id of [
   $(id).addEventListener("input", previewPnl);
 }
 
-document.querySelectorAll("[data-tab]").forEach(button => {
-  button.onclick = () => tab(button.dataset.tab);
+
+// Presentation-only placement: preserve all existing data elements and handlers.
+const catalog = document.getElementById("catalogCard");
+const marketPane = document.getElementById("market");
+if (catalog && marketPane) marketPane.appendChild(catalog);
+const bottomNav = document.querySelector(".bottom-nav");
+if (bottomNav) bottomNav.addEventListener("click", event => {
+ const button = event.target.closest("button[data-tab]");
+ if (!button) return;
+ const destination = button.dataset.tab;
+ tab(destination);
+ if (button.dataset.jump === "chart") {
+   document.getElementById("chart")?.closest("section.card")?.scrollIntoView({behavior:"smooth",block:"start"});
+ } else window.scrollTo({top:0,behavior:"smooth"});
+ document.querySelectorAll(".bottom-nav button").forEach(item => item.classList.toggle("active",item === button));
+});
+
+document.querySelectorAll(".top-tabs [data-tab]").forEach(button => {
+  button.onclick = () => { tab(button.dataset.tab); window.scrollTo({top:0,behavior:"smooth"}); };
 });
 
 document.querySelectorAll("[data-symbol]").forEach(button => {
