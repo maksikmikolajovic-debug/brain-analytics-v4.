@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ПРОВИДЕЦЬ AI V5.3 · Futures</title>
+<title>ПРОВИДЕЦЬ AI V6.0 · Intelligence</title>
 <style>
 :root {
   font-family: system-ui, Arial, sans-serif;
@@ -170,13 +170,44 @@ body.account-open .account-overlay{opacity:1;pointer-events:auto}body.account-op
 body.compact-ui .card{padding:10px;margin-top:8px}body.compact-ui .market-stat{padding:8px;min-height:68px}body.compact-ui .grid{gap:5px}
 body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{transition:none!important;animation:none!important}
 </style>
+<style>
+
+/* V6.0 premium design layer — additive, existing data IDs retained */
+:root{--v6-bg:#040914;--v6-panel:#0b1729;--v6-line:#234260;--v6-cyan:#48d9ff;--v6-text:#eef6ff}
+body{background:radial-gradient(ellipse 110% 490px at 50% -120px,#133d67 0%,#07172b 46%,#040914 100%);color:var(--v6-text)}
+main{max-width:1200px;padding-left:clamp(11px,2.4vw,25px);padding-right:clamp(11px,2.4vw,25px)}
+header{border-bottom:1px solid #274463;background:linear-gradient(125deg,rgba(4,11,24,.97),rgba(10,31,55,.96));box-shadow:0 14px 35px #0007}
+header h1{font-size:clamp(18px,4.6vw,25px);letter-spacing:.35px}header small{font-size:9px;letter-spacing:1px}
+.account-menu-trigger{background:linear-gradient(145deg,#0c304d,#09192c);border-color:#2d7194;box-shadow:0 0 15px #04b9ff16}
+.card{border:1px solid #27425e;border-radius:18px;background:linear-gradient(145deg,rgba(15,36,59,.95),rgba(5,15,29,.97));box-shadow:inset 0 1px #ffffff0c,0 14px 34px #0005}
+.card h2{font-size:14px;letter-spacing:.2px}
+button{transition:background .2s,border-color .2s,transform .2s}button:active{transform:scale(.98)}
+button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4ac9ff}
+.top-tabs{gap:7px;padding-top:14px;padding-bottom:9px}.top-tabs button{background:#0b1b2f;border-color:#223c57;border-radius:13px}
+.v6-hero{position:relative;overflow:hidden;margin:11px 0 18px;padding:23px 19px 17px;border:1px solid #285a81;border-radius:22px;background:radial-gradient(ellipse at 85% 8%,#175585a6,transparent 55%),linear-gradient(140deg,#112d4b,#071425 70%);box-shadow:0 15px 40px #0007,inset 0 1px #ffffff18}
+.v6-hero:after{content:'';position:absolute;pointer-events:none;right:-55px;top:48px;width:205px;height:205px;border:1px solid #43b8ef25;border-radius:50%;box-shadow:0 0 0 29px #43b8ef09,0 0 0 60px #43b8ef08}
+.v6-hero-top,.v6-hero-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1}
+.v6-eyebrow{font-size:9px;letter-spacing:1.1px;color:#9ed7f6;font-weight:800}.v6-version{font-size:9px;color:#8dbbd5;border:1px solid #376184;border-radius:30px;padding:6px 8px;white-space:nowrap}
+.v6-live-dot,.v6-hero-foot i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ee6bc;box-shadow:0 0 12px #4ee6bc80;margin-right:5px}
+.v6-hero-title{position:relative;z-index:1;margin-top:23px;max-width:540px;font-size:clamp(24px,5.5vw,39px);font-weight:850;line-height:1.16;letter-spacing:-.7px}
+.v6-hero-title em{font-style:normal;color:#63ceff}.v6-hero p{position:relative;z-index:1;color:#9fb8d0;font-size:12px;line-height:1.7;max-width:450px;margin:12px 0 18px}
+.v6-hero-actions{position:relative;z-index:1;display:flex;gap:9px;flex-wrap:wrap}.v6-hero-actions button{font-size:12px;font-weight:700;padding:12px 15px;border:1px solid #3889b9;background:#0b416b}.v6-hero-actions button:first-child{background:linear-gradient(120deg,#087fc3,#06a3e7);border-color:#36c8ff}
+.v6-hero-foot{border-top:1px solid #ffffff17;margin-top:20px;padding-top:13px;color:#85a5c2;font-size:9px;letter-spacing:.3px}
+.market-stat{border:1px solid #2b4c69;border-radius:15px;min-height:90px}.market-stat strong.blue{color:#59d1ff}.market-stat strong{font-size:20px}
+.value{font-variant-numeric:tabular-nums}.bottom-nav{backdrop-filter:blur(20px);background:rgba(4,12,25,.96);border-top-color:#2c4a64}.bottom-nav button.active{background:#0b3552;color:#5cd4ff}
+#liveChart{border-color:#2c5272;background:#050f1b;min-height:330px}#liveToolbar strong{color:#ccefff}#liveToolbar button{background:#0d3b5c;border-color:#347da4}
+#liveShell.live-full{background:linear-gradient(160deg,#061729,#020a14);padding-top:max(14px,env(safe-area-inset-top))}
+@media(max-width:400px){.v6-hero{padding:19px 14px 14px}.v6-hero-title{font-size:25px}.v6-eyebrow{font-size:8px}.v6-hero-foot{font-size:8px}.top-tabs button{font-size:12px;padding:10px 11px}}
+@media(min-width:720px){.v6-hero{padding:30px 33px}.v6-hero-title{margin-top:30px}.v6-hero p{font-size:14px}}
+
+</style>
 </head>
 <body>
 <main>
 <header>
   <button id="accountMenuButton" class="account-menu-trigger" type="button" aria-label="Відкрити акаунт" aria-expanded="false">☰</button>
   <div>
-    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V5.3</span></h1>
+    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.0</span></h1>
     <small>USDT Futures · Binance + Bybit + OKX + Bitget</small>
   </div>
   <span class="pill">SIMULATION</span>
@@ -186,7 +217,7 @@ body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{t
 <div id="accountOverlay" class="account-overlay" aria-hidden="true"></div>
 <aside id="accountDrawer" class="account-drawer" aria-label="Меню акаунта" aria-hidden="true">
  <div class="drawer-top"><strong>ПРОВИДЕЦЬ <span style="color:#42baff">AI</span></strong><button type="button" class="drawer-close" id="closeAccountMenu" aria-label="Закрити меню">×</button></div>
- <div class="drawer-avatar">◈</div><strong>Мій акаунт</strong><div class="drawer-sub">Гостьовий режим · SIMULATION<br>Вхід до персонального профілю ще не підключено.</div>
+ <div class="drawer-avatar">◈</div><strong id="drawerAccountTitle">Мій акаунт</strong><div class="drawer-sub" id="drawerAccountStatus">Гостьовий режим · SIMULATION<br>Увійти або зареєструватися можна у розділі «Мої угоди».</div><button type="button" class="drawer-link" data-account-go="journal"><span>♙</span>Акаунт / вхід</button>
  <div class="drawer-section"><h3>Навігація</h3>
   <button type="button" class="drawer-link" data-account-go="market"><span>⌂</span>Огляд ринку</button>
   <button type="button" class="drawer-link" data-account-go="scanner"><span>▥</span>Сканер TOP-5</button>
@@ -197,7 +228,7 @@ body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{t
   <label class="drawer-setting">Компактні картки <input id="compactUiSetting" type="checkbox"></label>
   <label class="drawer-setting">Зменшити анімацію <input id="motionUiSetting" type="checkbox"></label>
  </div>
- <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V5.3 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
+ <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.0 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
 </aside>
 
 <div id="toast" class="hidden" role="status"></div>
@@ -234,6 +265,13 @@ body.reduced-motion *,body.reduced-motion *:before,body.reduced-motion *:after{t
   <div class="tablewrap"><table><thead><tr><th>Пара</th><th>Ціна</th><th>Зміна 24 год</th><th>Обсяг 24 год, USDT</th></tr></thead><tbody id="topFive"></tbody></table></div>
 </section>
 <div id="market" class="tab active">
+<section class="v6-hero" aria-label="Intelligence overview">
+ <div class="v6-hero-top"><span class="v6-eyebrow"><span class="v6-live-dot"></span> MARKET INTELLIGENCE SYSTEM</span><span class="v6-version">CORE V6.0</span></div>
+ <div class="v6-hero-title">Ринок під <em>контролем даних.</em></div>
+ <p>Чотири біржі. Живі свічки. Ринкова структура та перевірка історичних сценаріїв — в одному інтерфейсі.</p>
+ <div class="v6-hero-actions"><button type="button" id="v6OpenChart">▤ LIVE графік</button><button type="button" id="v6OpenScanner">▥ Сканер TOP-5</button></div>
+ <div class="v6-hero-foot"><span><i></i> Публічні ринкові потоки</span><span>SIMULATION / READ ONLY</span></div>
+</section>
 <div class="section-intro"><strong>Огляд ринку</strong><span>Публічні ринкові дані · симуляція</span></div>
 <div class="market-stats" aria-label="Огляд модулів">
  <div class="market-stat"><span>Активні монети</span><strong class="blue">TOP 5</strong></div>
@@ -2002,6 +2040,9 @@ $("logout").onclick = async () => {
 db.auth.onAuthStateChange((_event, session) => {
   user = session?.user ?? null;
   authUI();
+  const accountTitle = $("drawerAccountTitle"), accountStatus = $("drawerAccountStatus");
+  if (accountTitle) accountTitle.textContent = user ? "Особистий профіль" : "Мій акаунт";
+  if (accountStatus) accountStatus.textContent = user ? (user.email + " · SIMULATION") : "Гостьовий режим · SIMULATION. Увійти або зареєструватися можна у розділі «Мої угоди».";
 
   if (user) {
     setTimeout(() => {
@@ -2060,6 +2101,8 @@ for (const id of [
 const catalog = document.getElementById("catalogCard");
 const marketPane = document.getElementById("market");
 if (catalog && marketPane) marketPane.appendChild(catalog);
+$("v6OpenChart")?.addEventListener("click",()=>{tab("market");setChartMode("candle");$("liveShell").closest("section.card")?.scrollIntoView({behavior:"smooth",block:"start"});});
+$("v6OpenScanner")?.addEventListener("click",()=>{tab("scanner");window.scrollTo({top:0,behavior:"smooth"});});
 const bottomNav = document.querySelector(".bottom-nav");
 if (bottomNav) bottomNav.addEventListener("click", event => {
  const button = event.target.closest("button[data-tab]");
@@ -2088,6 +2131,7 @@ document.querySelectorAll("[data-interval]").forEach(button => {
       item.classList.toggle("active", item === button);
     });
 
+    if(chartMode === "candle") stopLiveSocket();
     loadChart();
   };
 });
