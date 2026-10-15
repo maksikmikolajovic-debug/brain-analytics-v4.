@@ -139,6 +139,17 @@ header:before{content:'☰';position:absolute;left:17px;top:22px;font-size:21px;
 @media(min-width:680px){main{padding-bottom:105px}.bottom-nav{left:50%;transform:translateX(-50%);max-width:1050px}#chart,#candleChart{height:390px}}
 @media(max-width:390px){header h1{font-size:18px}.market-stat strong{font-size:16px}.market-stat{padding:10px 7px}main{padding-left:10px;padding-right:10px}}
 </style>
+<script defer src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+#liveChart{height:390px;width:100%;background:#060f1b;border:1px solid #1b344b;border-radius:12px;touch-action:pan-y}
+#liveToolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+#liveToolbar button{background:#163b60;color:#e5f4ff;border:1px solid #3574aa;border-radius:9px;padding:10px}
+#liveZoneInfo{font-size:12px;line-height:1.65;color:#c3d8eb;margin:8px 0}
+#liveShell.live-full{position:fixed!important;inset:0!important;z-index:99999;background:#07111e;padding:10px 8px max(15px,env(safe-area-inset-bottom));display:flex;flex-direction:column;overflow:auto}
+#liveShell.live-full #liveChart{height:auto!important;flex:1;min-height:300px}
+#liveShell.live-full #liveZoneInfo{max-height:20vh;overflow:auto}
+body:has(#liveShell.live-full){overflow:hidden}
+</style>
 </head>
 <body>
 <main>
@@ -240,7 +251,12 @@ header:before{content:'☰';position:absolute;left:17px;top:22px;font-size:21px;
   </div>
   <div class="controls"><button id="lineMode" class="active" type="button">Лінійний графік</button><button id="candleMode" type="button">Свічки + SMC</button></div>
   <canvas id="chart" role="img" aria-label="Історія ціни Binance"></canvas>
-  <canvas id="candleChart" class="hidden" role="img" aria-label="Свічки Binance та розрахункові SMC зони"></canvas>
+  <div id="liveShell" class="hidden">
+<div id="liveToolbar"><strong id="liveTitle">LIVE · Binance Futures</strong><button type="button" id="liveFull">⛶ На весь екран</button></div>
+<div id="liveChart" aria-label="Інтерактивні свічки Binance та SMC-рівні"></div>
+<div id="liveZoneInfo">Розрахункові SMC-зони та отримані ліквідації USD</div>
+</div>
+<canvas id="candleChart" class="hidden" style="display:none" role="img" aria-label="Резервний свічковий графік"></canvas>
   <small id="candleStatus">Свічки й зони SMC завантажуються окремо. Зони — евристика, не карта майбутніх ліквідацій.</small>
   <small id="chartInfo">—</small>
   <div class="levels">
@@ -584,6 +600,8 @@ function selectSymbol(next) {
   }
   clearForecast("Перевіряємо, чи є серверний прогноз для " + symbol);
   lastCloses = [];
+  stopLiveSocket();
+  candleRows=[];
   draw([]);
   for (const id of ["price", "rsi", "volatility", "support", "resistance"]) $(id).textContent = "—";
   $("updated").textContent = "Завантаження…";
@@ -811,41 +829,92 @@ function setChartMode(mode) {
   $("lineMode").classList.toggle("active",mode==="line");
   $("candleMode").classList.toggle("active",mode==="candle");
   $("chart").classList.toggle("hidden",mode!=="line");
-  $("candleChart").classList.toggle("hidden",mode!=="candle");
+  $("candleChart").classList.add("hidden");
+  $("liveShell").classList.toggle("hidden",mode!=="candle");
+  if(mode!=="candle")stopLiveSocket();
   if(mode==="line") draw(lastCloses);
-  else { loadChart(); renderCandles(); }
+  else { candleRows=[];loadChart(); }
 }
 $("lineMode").onclick=()=>setChartMode("line");
 $("candleMode").onclick=()=>setChartMode("candle");
 $("refreshSMC").onclick=loadExtra;
-function renderCandles() {
-  if(chartMode!=="candle")return;
-  const canvas=$("candleChart"),rect=canvas.getBoundingClientRect(),ratio=Math.min(devicePixelRatio||1,2);
-  const w=Math.max(260,rect.width),h=Math.max(220,rect.height);
-  canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
-  const ctx=canvas.getContext("2d");ctx.scale(ratio,ratio);
-  ctx.fillStyle="#0d1d30";ctx.fillRect(0,0,w,h);
-  const rows=candleRows;
-  if(!rows.length){ctx.fillStyle="#bdd3ee";ctx.fillText("Очікуємо свічки Binance…",12,28);return;}
-  const smc=(smcData?.top5||[]).find(x=>x.symbol===symbol);
-  const zones=(smc?.zones||[]).filter(z=>Number.isFinite(+z.low)&&Number.isFinite(+z.high)).slice(0,12);
-  const lo=Math.min(...rows.map(r=>r.l)),hi=Math.max(...rows.map(r=>r.h));
-  const pad=(hi-lo||hi*.01)*.08,min=lo-pad,max=hi+pad,span=max-min;
-  const left=9,right=w-78,top=16,bottom=h-24,plotH=bottom-top;
-  const y=v=>bottom-(v-min)/span*plotH;
-  ctx.font="10px system-ui";
-  for(let i=0;i<=4;i++){let v=min+span*i/4,py=y(v);ctx.strokeStyle="#253b54";ctx.beginPath();ctx.moveTo(left,py);ctx.lineTo(right,py);ctx.stroke();ctx.fillStyle="#a6bbd1";ctx.fillText(fmt(v),right+5,py+3);}
-  for(const z of zones){const a=Math.max(top,y(+z.high)),b=Math.min(bottom,y(+z.low));if(a>=b)continue;
-    const bullish=/bull|low/i.test(z.type),color=bullish?"96,221,177":"255,157,157";
-    ctx.fillStyle=`rgba(${color},.15)`;ctx.fillRect(left,a,right-left,b-a);
-    ctx.strokeStyle=`rgba(${color},.75)`;ctx.beginPath();ctx.moveTo(left,a);ctx.lineTo(right,a);ctx.stroke();
-    ctx.fillStyle=bullish?"#60ddb1":"#ff9d9d";ctx.fillText((zoneLabel[z.type]||z.type).slice(0,12),left+3,Math.max(top+10,a+11));
-  }
-  const step=(right-left)/rows.length,bw=Math.max(1,Math.min(7,step*.65));
-  rows.forEach((r,i)=>{const x=left+(i+.5)*step,up=r.c>=r.o;ctx.strokeStyle=ctx.fillStyle=up?"#60ddb1":"#ff7777";
-    ctx.beginPath();ctx.moveTo(x,y(r.h));ctx.lineTo(x,y(r.l));ctx.stroke();ctx.fillRect(x-bw/2,Math.min(y(r.o),y(r.c)),bw,Math.max(1,Math.abs(y(r.o)-y(r.c))));});
-  $("candleStatus").textContent=symbol+" · "+interval+" · "+rows.length+" закритих свічок · "+zones.length+" розрахункових SMC-зон. Ліквідації USD дивись у вкладці Smart Money / USD.";
+let liveChart=null,liveSeries=null,liveSocket=null,liveLines=[],liveResize=null;
+let liveCurrentKey="",liveRetry=null;
+function stopLiveSocket(){
+  clearTimeout(liveRetry);
+  if(liveSocket){const old=liveSocket;liveSocket=null;old.onclose=null;old.close();}
+  liveCurrentKey="";
 }
+function ensureLiveChart(){
+  if(liveChart)return true;
+  if(!window.LightweightCharts){$("candleStatus").textContent="Бібліотека інтерактивного графіка не завантажилася. Перевір інтернет та онови сторінку.";return false;}
+  const host=$("liveChart");
+  liveChart=LightweightCharts.createChart(host,{
+    width:host.clientWidth||320,height:host.clientHeight||390,
+    layout:{background:{type:"solid",color:"#060f1b"},textColor:"#a9bfd6"},
+    grid:{vertLines:{color:"#132338"},horzLines:{color:"#132338"}},
+    rightPriceScale:{borderColor:"#314b64"},timeScale:{borderColor:"#314b64",timeVisible:true,secondsVisible:false},
+    crosshair:{mode:LightweightCharts.CrosshairMode.Normal},
+    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
+    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
+  });
+  liveSeries=liveChart.addCandlestickSeries({upColor:"#21c49a",downColor:"#ed5969",borderVisible:false,wickUpColor:"#21c49a",wickDownColor:"#ed5969",priceLineVisible:true});
+  liveResize=new ResizeObserver(()=>{if(liveChart){liveChart.applyOptions({width:host.clientWidth||320,height:host.clientHeight||390});}});
+  liveResize.observe(host);
+  return true;
+}
+function updateLiveZones(){
+  if(!liveSeries)return;
+  for(const line of liveLines){try{liveSeries.removePriceLine(line)}catch(_){}}
+  liveLines=[];
+  const zones=(smcData?.top5||[]).find(x=>x.symbol===symbol)?.zones||[];
+  const notes=[];
+  for(const z of zones.slice(0,8)){
+    const low=Number(z.low),high=Number(z.high);
+    if(!Number.isFinite(low)||!Number.isFinite(high)||low<=0||high<=0)continue;
+    const support=/bull|low|support|demand/i.test(z.type||"");
+    const color=support?"#28c99f":"#ed7181";
+    for(const price of [low,high])liveLines.push(liveSeries.createPriceLine({price,color,lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:(z.type||"SMC").slice(0,13)}));
+    notes.push(`${z.type||"SMC"}: ${fmt(low)}–${fmt(high)} (оцінка)`);
+  }
+  const liq=(liquidationData?.top5||[]).find(x=>x.symbol===symbol);
+  const observed=liq?`Зафіксовано за 1 год: ${usd(liq.observed_usdt_1h)} · Binance ${usd(liq.by_venue_usdt_1h?.Binance)} · Bybit ${usd(liq.by_venue_usdt_1h?.Bybit)}. Дані потоків можуть бути неповними.`:"Для цієї пари суми ліквідацій поки недоступні.";
+  $("liveZoneInfo").textContent=(notes.length?notes.join(" | ")+". ":"SMC-зони для цієї пари не отримані. ")+observed;
+}
+function startLiveSocket(){
+  if(chartMode!=="candle"||document.hidden)return;
+  const key=symbol+"@"+interval;
+  if(liveCurrentKey===key&&liveSocket&&liveSocket.readyState<=1)return;
+  stopLiveSocket();liveCurrentKey=key;
+  const ws=new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@kline_${interval}`);
+  liveSocket=ws;
+  ws.onopen=()=>{$("liveTitle").textContent=`● LIVE · ${symbol} · ${interval}`};
+  ws.onmessage=ev=>{try{
+    const msg=JSON.parse(ev.data),k=msg.k;
+    if(!k||symbol!==k.s||interval!==k.i||chartMode!=="candle")return;
+    const bar={time:Math.floor(k.t/1000),open:+k.o,high:+k.h,low:+k.l,close:+k.c};
+    if(liveSeries)liveSeries.update(bar);
+    $("liveTitle").textContent=`● LIVE · ${symbol} · ${interval} · ${fmt(bar.close)}`;
+  }catch(_){}};
+  ws.onclose=()=>{if(liveSocket!==ws)return;liveSocket=null;$("liveTitle").textContent=`○ З'єднання · ${symbol}`;liveRetry=setTimeout(()=>{if(chartMode==="candle"&&!document.hidden)startLiveSocket()},5000)};
+  ws.onerror=()=>{$("candleStatus").textContent="LIVE WebSocket недоступний; перевір з'єднання. Історичні свічки залишаються доступні."};
+}
+function renderCandles(){
+  if(chartMode!=="candle")return;
+  if(!ensureLiveChart())return;
+  if(candleRows.length){
+    try{liveSeries.setData(candleRows.filter(r=>Number.isFinite(r.time)).map(r=>({time:r.time,open:r.o,high:r.h,low:r.l,close:r.c})));liveChart.timeScale().fitContent()}catch(e){$("candleStatus").textContent="Помилка свічок: "+e.message}
+  }
+  updateLiveZones();startLiveSocket();
+  $("candleStatus").textContent="Живі свічки Binance Futures. Рівні SMC — розрахункові; суми USD — зафіксовані події, не прогноз майбутніх ліквідацій.";
+}
+$("liveFull").onclick=()=>{
+  const shell=$("liveShell"),full=!shell.classList.contains("live-full");
+  shell.classList.toggle("live-full",full);
+  $("liveFull").textContent=full?"✕ Згорнути":"⛶ На весь екран";
+  setTimeout(()=>{if(liveChart){const host=$("liveChart");liveChart.applyOptions({width:host.clientWidth,height:host.clientHeight});}},100);
+};
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopLiveSocket();else if(chartMode==="candle")startLiveSocket()});
 
 function tab(name) {
   document.querySelectorAll(".tab").forEach(element => {
@@ -1269,7 +1338,7 @@ async function poll() {
       throw Error("Немає закритих свічок");
     }
 
-    candleRows = rows.slice(-100).map(k => ({o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
+    candleRows = raw.slice(-120).map(k => ({time:Math.floor(+k[0]/1000),o:+k[1],h:+k[2],l:+k[3],c:+k[4]}));
     lastCloses = rows.slice(-100).map(k => Number(k[4]));
     if (chartMode === "candle") renderCandles();
     draw(lastCloses);
