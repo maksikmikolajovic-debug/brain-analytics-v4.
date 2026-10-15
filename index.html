@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ПРОВИДЕЦЬ AI V6.3 · Intelligence</title>
+<title>ПРОВИДЕЦЬ AI V6.4 · Intelligence</title>
 <style>
 :root {
   font-family: system-ui, Arial, sans-serif;
@@ -716,6 +716,7 @@ const marketApi = "https://fapi.binance.com";
 function selectSymbol(next) {
   if (!listedSymbols.includes(next) || next === symbol) return;
   symbol = next;
+  loadSymbolSMC();
   requestNumber++;
   document.querySelectorAll("[data-symbol]").forEach(item => {
     item.classList.toggle("active", item.dataset.symbol === symbol);
@@ -920,6 +921,46 @@ const EXTRA_BASE = "https://brain-v5-server.onrender.com";
 let extraLoading = false;
 const zoneLabel = {bullish_fvg:"FVG ↑",bearish_fvg:"FVG ↓",bullish_ob:"OB ↑",bearish_ob:"OB ↓",equal_highs:"EQH",equal_lows:"EQL"};
 const usd = n => Number.isFinite(Number(n)) ? Number(n).toLocaleString("en-US",{maximumFractionDigits:2}) : "—";
+// V6.4: independent read-only SMC per selected Binance Futures symbol.
+const symbolSmcCache = new Map();
+let symbolSmcRequest = 0;
+let symbolSmcError = "";
+async function loadSymbolSMC(force=false) {
+  const requestedSymbol = symbol;
+  if (!/^[A-Z0-9]{2,30}$/.test(requestedSymbol)) return;
+  const previous = symbolSmcCache.get(requestedSymbol);
+  if (!force && previous && Date.now()-previous.at < 60000) {
+    symbolSmcError = "";
+    if (chartMode === "candle") updateLiveZones();
+    return;
+  }
+  const request = ++symbolSmcRequest;
+  symbolSmcError = "";
+  if (chartMode === "candle") updateLiveZones();
+  try {
+    const response = await fetch(EXTRA_BASE + "/smc-symbol?symbol=" + encodeURIComponent(requestedSymbol),
+      {cache:"no-store",signal:AbortSignal.timeout(25000)});
+    if (!response.ok) throw Error("HTTP " + response.status);
+    const payload = await response.json();
+    const item = payload?.data?.symbol === requestedSymbol ? payload.data
+      : payload?.symbol === requestedSymbol ? payload
+      : payload?.result?.symbol === requestedSymbol ? payload.result
+      : Array.isArray(payload?.top5) ? payload.top5.find(x=>x.symbol===requestedSymbol)
+      : null;
+    if (!item || !Array.isArray(item.zones)) throw Error("Невідомий формат відповіді SMC");
+    symbolSmcCache.set(requestedSymbol,{item,at:Date.now()});
+    if (requestedSymbol === symbol && request === symbolSmcRequest) {
+      symbolSmcError = "";
+      if (chartMode === "candle") updateLiveZones();
+    }
+  } catch(error) {
+    if (requestedSymbol === symbol && request === symbolSmcRequest) {
+      symbolSmcError = error.message || "Помилка мережі";
+      if (chartMode === "candle") updateLiveZones();
+    }
+  }
+}
+
 async function loadExtra() {
   if (extraLoading) return;
   extraLoading = true;
@@ -960,7 +1001,7 @@ function setChartMode(mode) {
   if(mode!=="candle")stopLiveSocket();
   $("chartRsiPanel").classList.toggle("hidden",mode!=="candle"||!chartTools.rsi);
   if(mode==="line") draw(lastCloses);
-  else { candleRows=[];loadChart(); }
+  else { candleRows=[];loadChart();loadSymbolSMC(); }
 }
 $("lineMode").onclick=()=>setChartMode("line");
 $("candleMode").onclick=()=>setChartMode("candle");
@@ -999,7 +1040,10 @@ function updateLiveZones(){
   if(!liveSeries)return;
   for(const line of liveLines){try{liveSeries.removePriceLine(line)}catch(_){}}
   liveLines=[];
-  const zones=chartTools.smc?((smcData?.top5||[]).find(x=>x.symbol===symbol)?.zones||[]):[];
+  const cached = symbolSmcCache.get(symbol);
+  const independent = cached && Date.now()-cached.at < 10*60*1000 ? cached.item : null;
+  const fallback = (smcData?.top5||[]).find(x=>x.symbol===symbol);
+  const zones = chartTools.smc ? (independent?.zones || fallback?.zones || []) : [];
   const notes=[];
   for(const z of zones.slice(0,8)){
     const low=Number(z.low),high=Number(z.high);
@@ -1011,7 +1055,7 @@ function updateLiveZones(){
   }
   const liq=(liquidationData?.top5||[]).find(x=>x.symbol===symbol);
   const observed=liq?`Зафіксовано за 1 год: ${usd(liq.observed_usdt_1h)} · Binance ${usd(liq.by_venue_usdt_1h?.Binance)} · Bybit ${usd(liq.by_venue_usdt_1h?.Bybit)}. Дані потоків можуть бути неповними.`:"Для цієї пари суми ліквідацій поки недоступні.";
-  $("liveZoneInfo").textContent=(chartTools.smc?(notes.length?notes.join(" | ")+". ":"SMC-зони для цієї пари не отримані. "):"SMC-зони приховано. ")+observed;
+  $("liveZoneInfo").textContent=(chartTools.smc?(notes.length?notes.join(" | ")+". ":(symbolSmcError ? "SMC для цієї пари недоступний ("+symbolSmcError+"). " : "SMC-зони завантажуються або відсутні. ")):"SMC-зони приховано. ")+observed;
 }
 function startLiveSocket(){
   if(chartMode!=="candle"||document.hidden)return;
@@ -1058,7 +1102,7 @@ for(const [id,key] of [["ema20Toggle","ema20"],["ema50Toggle","ema50"],["rsiTogg
   $(id).addEventListener("click",()=>{
     chartTools[key]=!chartTools[key];$(id).classList.toggle("active",chartTools[key]);$(id).setAttribute("aria-pressed",String(chartTools[key]));
     if(chartMode!=="candle")setChartMode("candle");
-    else{refreshChartTools();if(key==="smc")updateLiveZones()}
+    else{refreshChartTools();if(key==="smc"){updateLiveZones();if(chartTools.smc)loadSymbolSMC()}}
   });
 }
 function renderCandles(){
@@ -1067,7 +1111,7 @@ function renderCandles(){
   if(candleRows.length){
     try{liveSeries.setData(candleRows.filter(r=>Number.isFinite(r.time)).map(r=>({time:r.time,open:r.o,high:r.h,low:r.l,close:r.c})));liveChart.timeScale().fitContent()}catch(e){$("candleStatus").textContent="Помилка свічок: "+e.message}
   }
-  refreshChartTools();updateLiveZones();startLiveSocket();
+  refreshChartTools();updateLiveZones();if(chartTools.smc)loadSymbolSMC();startLiveSocket();
   $("candleStatus").textContent="Живі свічки Binance Futures. Рівні SMC — розрахункові; суми USD — зафіксовані події, не прогноз майбутніх ліквідацій.";
 }
 $("liveFull").onclick=()=>{
@@ -2254,7 +2298,7 @@ await poll();
 history();
 
 setInterval(poll, 10000);
-setInterval(() => { if (!document.hidden) loadExtra(); }, 60000);
+setInterval(() => { if (!document.hidden) { loadExtra(); if (chartMode === "candle" && chartTools.smc) loadSymbolSMC(); } }, 60000);
 
 setInterval(() => {
   history();
