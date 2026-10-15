@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ПРОВИДЕЦЬ AI V6.2 · Intelligence</title>
+<title>ПРОВИДЕЦЬ AI V6.3 · Intelligence</title>
 <style>
 :root {
   font-family: system-ui, Arial, sans-serif;
@@ -212,13 +212,31 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
 .diag-note{font-size:11px;color:#9cb2ca;line-height:1.6;margin-top:10px}
 @media(min-width:700px){.diag-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
+<style>
+/* V6.3 Professional Charts: compact, mobile-first toolbar */
+#market section.card:has(#liveShell)>.controls{margin:8px 0;gap:5px;align-items:center}
+#market section.card:has(#liveShell)>.controls [data-interval]{flex:1 1 0;min-width:0;padding:10px 3px;font-size:12px;white-space:nowrap}
+#market section.card:has(#liveShell)>.controls #refresh{flex:0 0 auto;padding:10px 9px;font-size:12px}
+#market section.card:has(#liveShell)>.chart-modes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+#market section.card:has(#liveShell)>.chart-modes button{padding:10px 7px;font-size:13px}
+.chart-tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.chart-tools button{flex:1 1 auto;font-size:11px;padding:8px 9px;border-radius:9px}
+.chart-tools button.active{background:#173d62;border-color:#55c6ff;color:#e8f8ff}
+.chart-rsi-panel{background:#0b2236;border:1px solid #295474;border-radius:10px;padding:9px 11px;margin:7px 0;font-size:12px;color:#b6e4fa}
+#liveToolbar{flex-wrap:nowrap;margin:7px 0}
+#liveToolbar strong{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#liveToolbar button{flex:0 0 auto;padding:8px 9px;font-size:11px}
+#liveChart{height:clamp(340px,58vh,580px)}
+#liveShell.live-full #liveChart{height:auto}
+@media(max-width:400px){#market section.card:has(#liveShell)>.controls [data-interval]{font-size:11px;padding:9px 2px}.chart-tools button{font-size:10px;padding:8px 6px}}
+</style>
 </head>
 <body>
 <main>
 <header>
   <button id="accountMenuButton" class="account-menu-trigger" type="button" aria-label="Відкрити акаунт" aria-expanded="false">☰</button>
   <div>
-    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.2</span></h1>
+    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.3</span></h1>
     <small>USDT Futures · Binance + Bybit + OKX + Bitget</small>
   </div>
   <span class="pill">SIMULATION</span>
@@ -240,7 +258,7 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
   <label class="drawer-setting">Компактні картки <input id="compactUiSetting" type="checkbox"></label>
   <label class="drawer-setting">Зменшити анімацію <input id="motionUiSetting" type="checkbox"></label>
  </div>
- <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.2 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
+ <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.3 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
 </aside>
 
 <div id="toast" class="hidden" role="status"></div>
@@ -278,7 +296,7 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
 </section>
 <div id="market" class="tab active">
 <section class="card" id="diagnosticsCard" aria-label="Діагностика джерел даних">
- <div class="diag-head"><h2>◉ Центр стабільності V6.2</h2><button type="button" id="runDiagnostics">↻ Перевірити джерела</button></div>
+ <div class="diag-head"><h2>◉ Центр стабільності V6.3</h2><button type="button" id="runDiagnostics">↻ Перевірити джерела</button></div>
  <div class="diag-grid">
   <div class="diag-item" id="diagRender"><b>Render · API</b><span>Не перевірено</span></div>
   <div class="diag-item" id="diagScanner"><b>Сканер TOP-5</b><span>Не перевірено</span></div>
@@ -347,9 +365,17 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
     <button data-interval="15m">15 хв</button>
     <button data-interval="1h">1 год</button>
     <button data-interval="4h">4 год</button>
+    <button data-interval="1d">1 день</button>
     <button id="refresh">↻ Оновити</button>
   </div>
-  <div class="controls"><button id="lineMode" class="active" type="button">Лінійний графік</button><button id="candleMode" type="button">Свічки + SMC</button></div>
+  <div class="controls chart-modes"><button id="lineMode" class="active" type="button">Лінія</button><button id="candleMode" type="button">Свічки</button></div>
+  <div class="chart-tools" aria-label="Індикатори графіка">
+    <button id="ema20Toggle" type="button" aria-pressed="false">EMA 20</button>
+    <button id="ema50Toggle" type="button" aria-pressed="false">EMA 50</button>
+    <button id="rsiToggle" type="button" aria-pressed="false">RSI 14</button>
+    <button id="smcToggle" type="button" aria-pressed="true" class="active">SMC</button>
+  </div>
+  <div id="chartRsiPanel" class="chart-rsi-panel hidden" aria-live="polite">RSI 14: —</div>
   <canvas id="chart" role="img" aria-label="Історія ціни Binance"></canvas>
   <div id="liveShell" class="hidden">
 <div id="liveToolbar"><strong id="liveTitle">LIVE · Binance Futures</strong><button type="button" id="liveFull">⛶ На весь екран</button></div>
@@ -916,7 +942,7 @@ async function loadExtra() {
       table("liqRows",(liquidationData.top5||[]).map(x=>[x.symbol,usd(x.observed_usdt_1h),usd(x.by_venue_usdt_1h?.Binance),usd(x.by_venue_usdt_1h?.Bybit),x.event_count_1h]));
     } else $("liqStatus").textContent="Liquidation USD недоступний: "+results[1].reason.message;
     renderSelectedEvents();
-    if(chartMode === "candle") renderCandles();
+    if(chartMode === "candle") updateLiveZones();
   } finally { extraLoading=false; }
 }
 function renderSelectedEvents() {
@@ -932,6 +958,7 @@ function setChartMode(mode) {
   $("candleChart").classList.add("hidden");
   $("liveShell").classList.toggle("hidden",mode!=="candle");
   if(mode!=="candle")stopLiveSocket();
+  $("chartRsiPanel").classList.toggle("hidden",mode!=="candle"||!chartTools.rsi);
   if(mode==="line") draw(lastCloses);
   else { candleRows=[];loadChart(); }
 }
@@ -939,6 +966,8 @@ $("lineMode").onclick=()=>setChartMode("line");
 $("candleMode").onclick=()=>setChartMode("candle");
 $("refreshSMC").onclick=loadExtra;
 let liveChart=null,liveSeries=null,liveSocket=null,liveLines=[],liveResize=null;
+let emaSeries20=null,emaSeries50=null;
+const chartTools={ema20:false,ema50:false,rsi:false,smc:true};
 let liveCurrentKey="",liveRetry=null;
 function stopLiveSocket(){
   clearTimeout(liveRetry);
@@ -959,6 +988,9 @@ function ensureLiveChart(){
     handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true}
   });
   liveSeries=liveChart.addCandlestickSeries({upColor:"#21c49a",downColor:"#ed5969",borderVisible:false,wickUpColor:"#21c49a",wickDownColor:"#ed5969",priceLineVisible:true});
+  emaSeries20=liveChart.addLineSeries({color:'#f7c66b',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  emaSeries50=liveChart.addLineSeries({color:'#9d93ff',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+  emaSeries20.applyOptions({visible:false});emaSeries50.applyOptions({visible:false});
   liveResize=new ResizeObserver(()=>{if(liveChart){liveChart.applyOptions({width:host.clientWidth||320,height:host.clientHeight||390});}});
   liveResize.observe(host);
   return true;
@@ -967,7 +999,7 @@ function updateLiveZones(){
   if(!liveSeries)return;
   for(const line of liveLines){try{liveSeries.removePriceLine(line)}catch(_){}}
   liveLines=[];
-  const zones=(smcData?.top5||[]).find(x=>x.symbol===symbol)?.zones||[];
+  const zones=chartTools.smc?((smcData?.top5||[]).find(x=>x.symbol===symbol)?.zones||[]):[];
   const notes=[];
   for(const z of zones.slice(0,8)){
     const low=Number(z.low),high=Number(z.high);
@@ -979,7 +1011,7 @@ function updateLiveZones(){
   }
   const liq=(liquidationData?.top5||[]).find(x=>x.symbol===symbol);
   const observed=liq?`Зафіксовано за 1 год: ${usd(liq.observed_usdt_1h)} · Binance ${usd(liq.by_venue_usdt_1h?.Binance)} · Bybit ${usd(liq.by_venue_usdt_1h?.Bybit)}. Дані потоків можуть бути неповними.`:"Для цієї пари суми ліквідацій поки недоступні.";
-  $("liveZoneInfo").textContent=(notes.length?notes.join(" | ")+". ":"SMC-зони для цієї пари не отримані. ")+observed;
+  $("liveZoneInfo").textContent=(chartTools.smc?(notes.length?notes.join(" | ")+". ":"SMC-зони для цієї пари не отримані. "):"SMC-зони приховано. ")+observed;
 }
 function startLiveSocket(){
   if(chartMode!=="candle"||document.hidden)return;
@@ -994,10 +1026,40 @@ function startLiveSocket(){
     if(!k||symbol!==k.s||interval!==k.i||chartMode!=="candle")return;
     const bar={time:Math.floor(k.t/1000),open:+k.o,high:+k.h,low:+k.l,close:+k.c};
     if(liveSeries)liveSeries.update(bar);
+    if(candleRows.length && bar.time>=candleRows[candleRows.length-1].time){if(bar.time===candleRows[candleRows.length-1].time)candleRows[candleRows.length-1]={time:bar.time,o:bar.open,h:bar.high,l:bar.low,c:bar.close};else{candleRows.push({time:bar.time,o:bar.open,h:bar.high,l:bar.low,c:bar.close});if(candleRows.length>150)candleRows.shift()}if(chartTools.ema20||chartTools.ema50||chartTools.rsi)refreshChartTools()}
     $("liveTitle").textContent=`● LIVE · ${symbol} · ${interval} · ${fmt(bar.close)}`;
   }catch(_){}};
   ws.onclose=()=>{if(liveSocket!==ws)return;liveSocket=null;$("liveTitle").textContent=`○ З'єднання · ${symbol}`;liveRetry=setTimeout(()=>{if(chartMode==="candle"&&!document.hidden)startLiveSocket()},5000)};
   ws.onerror=()=>{$("candleStatus").textContent="LIVE WebSocket недоступний; перевір з'єднання. Історичні свічки залишаються доступні."};
+}
+function emaPoints(rows,period){
+  if(rows.length<period)return [];
+  const alpha=2/(period+1);let avg=rows.slice(0,period).reduce((sum,r)=>sum+r.c,0)/period;
+  const out=[{time:rows[period-1].time,value:avg}];
+  for(let i=period;i<rows.length;i++){avg=rows[i].c*alpha+avg*(1-alpha);out.push({time:rows[i].time,value:avg})}
+  return out;
+}
+function rsiLast(rows,period=14){
+  if(rows.length<=period)return null;
+  let gain=0,loss=0;
+  for(let i=1;i<=period;i++){const delta=rows[i].c-rows[i-1].c;gain+=Math.max(delta,0);loss+=Math.max(-delta,0)}
+  gain/=period;loss/=period;
+  for(let i=period+1;i<rows.length;i++){const delta=rows[i].c-rows[i-1].c;gain=(gain*(period-1)+Math.max(delta,0))/period;loss=(loss*(period-1)+Math.max(-delta,0))/period}
+  return loss===0?(gain===0?50:100):100-100/(1+gain/loss);
+}
+function refreshChartTools(){
+  if(emaSeries20){emaSeries20.applyOptions({visible:chartTools.ema20});emaSeries20.setData(chartTools.ema20?emaPoints(candleRows,20):[])}
+  if(emaSeries50){emaSeries50.applyOptions({visible:chartTools.ema50});emaSeries50.setData(chartTools.ema50?emaPoints(candleRows,50):[])}
+  const panel=$("chartRsiPanel");panel.classList.toggle("hidden",!chartTools.rsi);
+  const value=rsiLast(candleRows);
+  panel.textContent="RSI (14) · "+symbol+" · "+interval+": "+(value===null?"—":value.toFixed(1))+" · індикатор за завантаженими свічками";
+}
+for(const [id,key] of [["ema20Toggle","ema20"],["ema50Toggle","ema50"],["rsiToggle","rsi"],["smcToggle","smc"]]){
+  $(id).addEventListener("click",()=>{
+    chartTools[key]=!chartTools[key];$(id).classList.toggle("active",chartTools[key]);$(id).setAttribute("aria-pressed",String(chartTools[key]));
+    if(chartMode!=="candle")setChartMode("candle");
+    else{refreshChartTools();if(key==="smc")updateLiveZones()}
+  });
 }
 function renderCandles(){
   if(chartMode!=="candle")return;
@@ -1005,13 +1067,13 @@ function renderCandles(){
   if(candleRows.length){
     try{liveSeries.setData(candleRows.filter(r=>Number.isFinite(r.time)).map(r=>({time:r.time,open:r.o,high:r.h,low:r.l,close:r.c})));liveChart.timeScale().fitContent()}catch(e){$("candleStatus").textContent="Помилка свічок: "+e.message}
   }
-  updateLiveZones();startLiveSocket();
+  refreshChartTools();updateLiveZones();startLiveSocket();
   $("candleStatus").textContent="Живі свічки Binance Futures. Рівні SMC — розрахункові; суми USD — зафіксовані події, не прогноз майбутніх ліквідацій.";
 }
 $("liveFull").onclick=()=>{
   const shell=$("liveShell"),full=!shell.classList.contains("live-full");
   shell.classList.toggle("live-full",full);
-  $("liveFull").textContent=full?"✕ Згорнути":"⛶ На весь екран";
+  $("liveFull").textContent=full?"✕ Згорнути":"⛶ Екран";
   setTimeout(()=>{if(liveChart){const host=$("liveChart");liveChart.applyOptions({width:host.clientWidth,height:host.clientHeight});}},100);
 };
 document.addEventListener("visibilitychange",()=>{if(document.hidden)stopLiveSocket();else if(chartMode==="candle")startLiveSocket()});
@@ -2326,7 +2388,7 @@ window.addEventListener(
 <script>
 /* V6.2 localization: UI-only; never translates symbols, API payloads or stored data. */
 (()=>{
-const dict={"Ринок і прогноз": "Market & forecast", "Сканер TOP-5": "TOP-5 scanner", "Перевірка прогнозів": "Forecast verification", "Мої угоди": "My simulations", "Ринок": "Market", "Графік": "Chart", "Історія": "History", "Огляд ринку": "Market overview", "Історія прогнозів": "Forecast history", "Навігація": "Navigation", "Налаштування вигляду": "Appearance settings", "Компактні картки": "Compact cards", "Зменшити анімацію": "Reduce motion", "Система": "System", "Мій акаунт": "My account", "Акаунт / вхід": "Account / sign in", "Мова інтерфейсу": "Interface language", "Мова / Language": "Language / Мова", "Центр стабільності V6.2": "Stability center V6.2", "Перевірити джерела": "Check data sources", "Не перевірено": "Not checked", "Перевіряємо…": "Checking…", "Доступно": "Available", "Недоступно": "Unavailable", "Неповні дані": "Incomplete data", "тайм-аут": "timeout", "Ринок під контролем даних.": "Market intelligence, driven by data.", "Чотири біржі. Живі свічки. Ринкова структура та перевірка історичних сценаріїв — в одному інтерфейсі.": "Four exchanges. Live candles. Market structure and historical scenario verification — all in one interface.", "LIVE графік": "LIVE chart", "Публічні ринкові потоки": "Public market feeds", "Гостьовий режим": "Guest mode", "Увійти або зареєструватися можна у розділі «Мої угоди».": "Sign in or register in My simulations.", "Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.": "Market data is public. Liquidations are observed events; zones are model estimates.", "Остання перевірка:": "Last checked:", "Статус API не гарантує повноту ринкових даних.": "API status does not guarantee complete market data.", "Не вдалося перевірити /health (можливе CORS-обмеження)": "Could not verify /health (possible CORS restriction)", "Київ": "Kyiv", "ПРОВИДЕЦЬ": "PROVYDETS", "ОЧІКУВАТИ": "WAIT", "прогноз застарів": "forecast expired", "Відкрити акаунт": "Open account", "Закрити меню": "Close menu", "Ціна": "Price", "Обсяг": "Volume", "Зміна": "Change", "Час": "Time", "Дата": "Date", "Статус": "Status", "Оновити": "Refresh", "Завантаження…": "Loading…", "Помилка": "Error", "Прогноз": "Forecast", "Купити": "Buy", "Продати": "Sell", "Вхід": "Entry", "Вихід": "Exit", "Налаштування": "Settings", "Деталі": "Details", "Зберегти": "Save", "Скасувати": "Cancel", "Всі": "All", "Сьогодні": "Today", "Вчора": "Yesterday", "Тиждень": "Week", "Місяць": "Month", "Знайти": "Search", "Закрити": "Close", "Відкрити": "Open", "Увійти": "Sign in", "Зареєструватися": "Register", "Вийти": "Sign out", "Пароль": "Password", "Пошта": "Email", "Інтервал": "Interval", "Точність": "Accuracy", "Результат": "Result", "Напрямок": "Direction", "Підтверджено": "Confirmed", "Очікування": "Pending", "Виконано": "Completed", "Немає даних": "No data", "Симуляція": "Simulation", "Модельні оцінки": "Model estimates"};
+const dict={"Ринок і прогноз": "Market & forecast", "Сканер TOP-5": "TOP-5 scanner", "Перевірка прогнозів": "Forecast verification", "Мої угоди": "My simulations", "Ринок": "Market", "Графік": "Chart", "Історія": "History", "Огляд ринку": "Market overview", "Історія прогнозів": "Forecast history", "Навігація": "Navigation", "Налаштування вигляду": "Appearance settings", "Компактні картки": "Compact cards", "Зменшити анімацію": "Reduce motion", "Система": "System", "Мій акаунт": "My account", "Акаунт / вхід": "Account / sign in", "Мова інтерфейсу": "Interface language", "Мова / Language": "Language / Мова", "Центр стабільності V6.3": "Stability center V6.3", "Перевірити джерела": "Check data sources", "Не перевірено": "Not checked", "Перевіряємо…": "Checking…", "Доступно": "Available", "Недоступно": "Unavailable", "Неповні дані": "Incomplete data", "тайм-аут": "timeout", "Ринок під контролем даних.": "Market intelligence, driven by data.", "Чотири біржі. Живі свічки. Ринкова структура та перевірка історичних сценаріїв — в одному інтерфейсі.": "Four exchanges. Live candles. Market structure and historical scenario verification — all in one interface.", "LIVE графік": "LIVE chart", "Публічні ринкові потоки": "Public market feeds", "Гостьовий режим": "Guest mode", "Увійти або зареєструватися можна у розділі «Мої угоди».": "Sign in or register in My simulations.", "Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.": "Market data is public. Liquidations are observed events; zones are model estimates.", "Остання перевірка:": "Last checked:", "Статус API не гарантує повноту ринкових даних.": "API status does not guarantee complete market data.", "Не вдалося перевірити /health (можливе CORS-обмеження)": "Could not verify /health (possible CORS restriction)", "Київ": "Kyiv", "ПРОВИДЕЦЬ": "PROVYDETS", "ОЧІКУВАТИ": "WAIT", "прогноз застарів": "forecast expired", "Відкрити акаунт": "Open account", "Закрити меню": "Close menu", "Ціна": "Price", "Обсяг": "Volume", "Зміна": "Change", "Час": "Time", "Дата": "Date", "Статус": "Status", "Оновити": "Refresh", "Завантаження…": "Loading…", "Помилка": "Error", "Прогноз": "Forecast", "Купити": "Buy", "Продати": "Sell", "Вхід": "Entry", "Вихід": "Exit", "Налаштування": "Settings", "Деталі": "Details", "Зберегти": "Save", "Скасувати": "Cancel", "Всі": "All", "Сьогодні": "Today", "Вчора": "Yesterday", "Тиждень": "Week", "Місяць": "Month", "Знайти": "Search", "Закрити": "Close", "Відкрити": "Open", "Увійти": "Sign in", "Зареєструватися": "Register", "Вийти": "Sign out", "Пароль": "Password", "Пошта": "Email", "Інтервал": "Interval", "Точність": "Accuracy", "Результат": "Result", "Напрямок": "Direction", "Підтверджено": "Confirmed", "Очікування": "Pending", "Виконано": "Completed", "Немає даних": "No data", "Симуляція": "Simulation", "Модельні оцінки": "Model estimates"};
 const pairs=Object.entries(dict).sort((a,b)=>b[0].length-a[0].length);
 const select=document.getElementById('appLanguage');
 let lang='uk', busy=false;
