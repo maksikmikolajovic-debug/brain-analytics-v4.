@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ПРОВИДЕЦЬ AI V6.0 · Intelligence</title>
+<title>ПРОВИДЕЦЬ AI V6.1 · Intelligence</title>
 <style>
 :root {
   font-family: system-ui, Arial, sans-serif;
@@ -201,13 +201,24 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
 @media(min-width:720px){.v6-hero{padding:30px 33px}.v6-hero-title{margin-top:30px}.v6-hero p{font-size:14px}}
 
 </style>
+<style>
+/* V6.1 diagnostic foundation — isolated from the analytics engine */
+.diag-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.diag-head h2{margin:0}.diag-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.diag-item{border:1px solid #23405a;border-radius:12px;padding:11px;background:#081726;min-width:0}
+.diag-item b{display:block;font-size:12px;color:#d5eaff}.diag-item span{display:block;font-size:12px;margin-top:6px;color:#a3b7cc;overflow-wrap:anywhere}
+.diag-item[data-state="ok"]{border-color:#245e52}.diag-item[data-state="bad"]{border-color:#86504f}
+.diag-item[data-state="ok"] span{color:#64ddb6}.diag-item[data-state="bad"] span{color:#ff9c9c}
+.diag-note{font-size:11px;color:#9cb2ca;line-height:1.6;margin-top:10px}
+@media(min-width:700px){.diag-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
 </head>
 <body>
 <main>
 <header>
   <button id="accountMenuButton" class="account-menu-trigger" type="button" aria-label="Відкрити акаунт" aria-expanded="false">☰</button>
   <div>
-    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.0</span></h1>
+    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.1</span></h1>
     <small>USDT Futures · Binance + Bybit + OKX + Bitget</small>
   </div>
   <span class="pill">SIMULATION</span>
@@ -228,7 +239,7 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
   <label class="drawer-setting">Компактні картки <input id="compactUiSetting" type="checkbox"></label>
   <label class="drawer-setting">Зменшити анімацію <input id="motionUiSetting" type="checkbox"></label>
  </div>
- <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.0 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
+ <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.1 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
 </aside>
 
 <div id="toast" class="hidden" role="status"></div>
@@ -265,6 +276,17 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
   <div class="tablewrap"><table><thead><tr><th>Пара</th><th>Ціна</th><th>Зміна 24 год</th><th>Обсяг 24 год, USDT</th></tr></thead><tbody id="topFive"></tbody></table></div>
 </section>
 <div id="market" class="tab active">
+<section class="card" id="diagnosticsCard" aria-label="Діагностика джерел даних">
+ <div class="diag-head"><h2>◉ Центр стабільності V6.1</h2><button type="button" id="runDiagnostics">↻ Перевірити джерела</button></div>
+ <div class="diag-grid">
+  <div class="diag-item" id="diagRender"><b>Render · API</b><span>Не перевірено</span></div>
+  <div class="diag-item" id="diagScanner"><b>Сканер TOP-5</b><span>Не перевірено</span></div>
+  <div class="diag-item" id="diagSmc"><b>Smart Money</b><span>Не перевірено</span></div>
+  <div class="diag-item" id="diagLiq"><b>Ліквідації</b><span>Не перевірено</span></div>
+ </div>
+ <div class="diag-note" id="diagChecked">Статуси показують доступність API, а не точність прогнозів. Перевірка не змінює сервер і не виконує угод.</div>
+</section>
+
 <section class="v6-hero" aria-label="Intelligence overview">
  <div class="v6-hero-top"><span class="v6-eyebrow"><span class="v6-live-dot"></span> MARKET INTELLIGENCE SYSTEM</span><span class="v6-version">CORE V6.0</span></div>
  <div class="v6-hero-title">Ринок під <em>контролем даних.</em></div>
@@ -2259,6 +2281,43 @@ window.addEventListener(
   document.body.classList.toggle(cls,el.checked);
   el.addEventListener('change',()=>{document.body.classList.toggle(cls,el.checked);try{localStorage.setItem(key,el.checked?'1':'0')}catch(e){}});
  });
+})();
+</script>
+<script>
+/* V6.1: standalone read-only API health diagnostics */
+(()=>{
+ const endpoints=[
+  ['diagRender','/health',null],
+  ['diagScanner','/scanner',d=>d&&d.scanner_status==='OK'&&Array.isArray(d.top5)],
+  ['diagSmc','/smc-top5',d=>d&&Array.isArray(d.top5)],
+  ['diagLiq','/liquidations',d=>d&&Array.isArray(d.top5)]
+ ];
+ const btn=document.getElementById('runDiagnostics');
+ let running=false;
+ const base='https://brain-v5-server.onrender.com';
+ async function check(id,path,validate){
+  const el=document.getElementById(id),out=el.querySelector('span');
+  el.dataset.state='';out.textContent='Перевіряємо…';
+  const started=performance.now();
+  try{
+   const response=await fetch(base+path,{cache:'no-store',signal:AbortSignal.timeout(22000)});
+   if(!response.ok)throw new Error('HTTP '+response.status);
+   const body=await response.json();
+   if(validate&&!validate(body))throw new Error('Неповні дані');
+   el.dataset.state='ok';out.textContent='Доступно · '+Math.round(performance.now()-started)+' мс';
+  }catch(e){el.dataset.state='bad';out.textContent='Недоступно · '+(e.name==='TimeoutError'?'тайм-аут':e.message);}
+ }
+ async function run(){
+  if(running)return;
+  running=true;btn.disabled=true;
+  try{
+   await Promise.all(endpoints.map(x=>check(...x)));
+   document.getElementById('diagChecked').textContent='Остання перевірка: '+new Date().toLocaleString('uk-UA',{timeZone:'Europe/Kyiv'})+' (Київ). Статус API не гарантує повноту ринкових даних.';
+  }finally{running=false;btn.disabled=false;}
+ }
+ btn.addEventListener('click',run);
+ // Run once when opened, never continuously poll endpoints from this module.
+ setTimeout(run,1800);
 })();
 </script>
 </body>
