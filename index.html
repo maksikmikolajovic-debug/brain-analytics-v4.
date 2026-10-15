@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#050b13">
 <link rel="manifest" href="manifest.webmanifest">
-<title>ПРОВИДЕЦЬ AI V6.1 · Intelligence</title>
+<title>ПРОВИДЕЦЬ AI V6.2 · Intelligence</title>
 <style>
 :root {
   font-family: system-ui, Arial, sans-serif;
@@ -218,7 +218,7 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
 <header>
   <button id="accountMenuButton" class="account-menu-trigger" type="button" aria-label="Відкрити акаунт" aria-expanded="false">☰</button>
   <div>
-    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.1</span></h1>
+    <h1>ПРОВИДЕЦЬ <span style="color:#7ab8ff">AI V6.2</span></h1>
     <small>USDT Futures · Binance + Bybit + OKX + Bitget</small>
   </div>
   <span class="pill">SIMULATION</span>
@@ -235,11 +235,12 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
   <button type="button" class="drawer-link" data-account-go="smc"><span>◇</span>Smart Money / USD</button>
   <button type="button" class="drawer-link" data-account-go="history"><span>◷</span>Історія прогнозів</button>
  </div>
+ <div class="drawer-section"><h3 data-i18n="languageLabel">Мова / Language</h3><label class="drawer-setting"><span data-i18n="languageSetting">Мова інтерфейсу</span><select id="appLanguage" aria-label="Language" style="background:#10253b;color:#e8f5ff;border:1px solid #355a77;border-radius:9px;padding:8px"><option value="uk">🇺🇦 Українська</option><option value="en">🇬🇧 English</option></select></label></div>
  <div class="drawer-section"><h3>Налаштування вигляду</h3>
   <label class="drawer-setting">Компактні картки <input id="compactUiSetting" type="checkbox"></label>
   <label class="drawer-setting">Зменшити анімацію <input id="motionUiSetting" type="checkbox"></label>
  </div>
- <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.1 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
+ <div class="drawer-section"><h3>Система</h3><div class="drawer-sub">ПРОВИДЕЦЬ AI V6.2 · Live Analytics<br>Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.</div></div>
 </aside>
 
 <div id="toast" class="hidden" role="status"></div>
@@ -277,7 +278,7 @@ button.active{background:linear-gradient(125deg,#086eb9,#0a9de6);border-color:#4
 </section>
 <div id="market" class="tab active">
 <section class="card" id="diagnosticsCard" aria-label="Діагностика джерел даних">
- <div class="diag-head"><h2>◉ Центр стабільності V6.1</h2><button type="button" id="runDiagnostics">↻ Перевірити джерела</button></div>
+ <div class="diag-head"><h2>◉ Центр стабільності V6.2</h2><button type="button" id="runDiagnostics">↻ Перевірити джерела</button></div>
  <div class="diag-grid">
   <div class="diag-item" id="diagRender"><b>Render · API</b><span>Не перевірено</span></div>
   <div class="diag-item" id="diagScanner"><b>Сканер TOP-5</b><span>Не перевірено</span></div>
@@ -2305,19 +2306,73 @@ window.addEventListener(
    const body=await response.json();
    if(validate&&!validate(body))throw new Error('Неповні дані');
    el.dataset.state='ok';out.textContent='Доступно · '+Math.round(performance.now()-started)+' мс';
-  }catch(e){el.dataset.state='bad';out.textContent='Недоступно · '+(e.name==='TimeoutError'?'тайм-аут':e.message);}
+  }catch(e){if(id==='diagRender' && document.getElementById('diagScanner')?.dataset.state==='ok'){el.dataset.state='';out.textContent='Не вдалося перевірити /health (можливе CORS-обмеження)';}else{el.dataset.state='bad';out.textContent='Недоступно · '+(e.name==='TimeoutError'?'тайм-аут':e.message);}}
  }
  async function run(){
   if(running)return;
   running=true;btn.disabled=true;
   try{
-   await Promise.all(endpoints.map(x=>check(...x)));
+   await Promise.all(endpoints.slice(1).map(x=>check(...x)));
+   await check(...endpoints[0]);
    document.getElementById('diagChecked').textContent='Остання перевірка: '+new Date().toLocaleString('uk-UA',{timeZone:'Europe/Kyiv'})+' (Київ). Статус API не гарантує повноту ринкових даних.';
   }finally{running=false;btn.disabled=false;}
  }
  btn.addEventListener('click',run);
  // Run once when opened, never continuously poll endpoints from this module.
  setTimeout(run,1800);
+})();
+</script>
+
+<script>
+/* V6.2 localization: UI-only; never translates symbols, API payloads or stored data. */
+(()=>{
+const dict={"Ринок і прогноз": "Market & forecast", "Сканер TOP-5": "TOP-5 scanner", "Перевірка прогнозів": "Forecast verification", "Мої угоди": "My simulations", "Ринок": "Market", "Графік": "Chart", "Історія": "History", "Огляд ринку": "Market overview", "Історія прогнозів": "Forecast history", "Навігація": "Navigation", "Налаштування вигляду": "Appearance settings", "Компактні картки": "Compact cards", "Зменшити анімацію": "Reduce motion", "Система": "System", "Мій акаунт": "My account", "Акаунт / вхід": "Account / sign in", "Мова інтерфейсу": "Interface language", "Мова / Language": "Language / Мова", "Центр стабільності V6.2": "Stability center V6.2", "Перевірити джерела": "Check data sources", "Не перевірено": "Not checked", "Перевіряємо…": "Checking…", "Доступно": "Available", "Недоступно": "Unavailable", "Неповні дані": "Incomplete data", "тайм-аут": "timeout", "Ринок під контролем даних.": "Market intelligence, driven by data.", "Чотири біржі. Живі свічки. Ринкова структура та перевірка історичних сценаріїв — в одному інтерфейсі.": "Four exchanges. Live candles. Market structure and historical scenario verification — all in one interface.", "LIVE графік": "LIVE chart", "Публічні ринкові потоки": "Public market feeds", "Гостьовий режим": "Guest mode", "Увійти або зареєструватися можна у розділі «Мої угоди».": "Sign in or register in My simulations.", "Дані ринку — публічні. Ліквідації — спостережувані події, зони — модельні оцінки.": "Market data is public. Liquidations are observed events; zones are model estimates.", "Остання перевірка:": "Last checked:", "Статус API не гарантує повноту ринкових даних.": "API status does not guarantee complete market data.", "Не вдалося перевірити /health (можливе CORS-обмеження)": "Could not verify /health (possible CORS restriction)", "Київ": "Kyiv", "ПРОВИДЕЦЬ": "PROVYDETS", "ОЧІКУВАТИ": "WAIT", "прогноз застарів": "forecast expired", "Відкрити акаунт": "Open account", "Закрити меню": "Close menu", "Ціна": "Price", "Обсяг": "Volume", "Зміна": "Change", "Час": "Time", "Дата": "Date", "Статус": "Status", "Оновити": "Refresh", "Завантаження…": "Loading…", "Помилка": "Error", "Прогноз": "Forecast", "Купити": "Buy", "Продати": "Sell", "Вхід": "Entry", "Вихід": "Exit", "Налаштування": "Settings", "Деталі": "Details", "Зберегти": "Save", "Скасувати": "Cancel", "Всі": "All", "Сьогодні": "Today", "Вчора": "Yesterday", "Тиждень": "Week", "Місяць": "Month", "Знайти": "Search", "Закрити": "Close", "Відкрити": "Open", "Увійти": "Sign in", "Зареєструватися": "Register", "Вийти": "Sign out", "Пароль": "Password", "Пошта": "Email", "Інтервал": "Interval", "Точність": "Accuracy", "Результат": "Result", "Напрямок": "Direction", "Підтверджено": "Confirmed", "Очікування": "Pending", "Виконано": "Completed", "Немає даних": "No data", "Симуляція": "Simulation", "Модельні оцінки": "Model estimates"};
+const pairs=Object.entries(dict).sort((a,b)=>b[0].length-a[0].length);
+const select=document.getElementById('appLanguage');
+let lang='uk', busy=false;
+try{lang=localStorage.getItem('pv_lang')==='en'?'en':'uk'}catch(e){}
+select.value=lang;
+const originals=new WeakMap();
+const tracked=new Set();
+function translated(src){let out=src;for(const [uk,en] of pairs){if(out.includes(uk))out=out.split(uk).join(en)}return out}
+function processText(node){
+ const parent=node.parentElement;
+ if(!parent || parent.closest('script,style,textarea,code,pre,option,#chart,#tvChart,svg'))return;
+ let original=originals.get(node);
+ if(original===undefined){original=node.nodeValue;originals.set(node,original);tracked.add(node)}
+ const desired=lang==='en'?translated(original):original;
+ if(node.nodeValue!==desired)node.nodeValue=desired;
+}
+function scan(root){
+ if(root.nodeType===3){processText(root);return}
+ if(root.nodeType!==1 && root.nodeType!==9)return;
+ if(root.nodeType===1 && root.matches('script,style,textarea,code,pre,svg'))return;
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+ const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+ nodes.forEach(processText);
+ root.querySelectorAll?.('[placeholder],[title],[aria-label]').forEach(el=>{
+  for(const attr of ['placeholder','title','aria-label']){if(!el.hasAttribute(attr))continue;
+   const key='pvOriginal'+attr; if(!el.dataset[key])el.dataset[key]=el.getAttribute(attr);
+   el.setAttribute(attr,lang==='en'?translated(el.dataset[key]):el.dataset[key]);
+  }
+ });
+}
+function update(){busy=true;document.documentElement.lang=lang;scan(document.body);busy=false}
+const observer=new MutationObserver(records=>{
+ if(busy)return;
+ busy=true;
+ for(const record of records){
+  if(record.type==='characterData'){
+   const node=record.target,old=originals.get(node),value=node.nodeValue;
+   if(value!==old && value!==translated(old??'')){originals.set(node,value);tracked.add(node)}
+   processText(node);
+  }else for(const node of record.addedNodes)scan(node);
+ }
+ busy=false;
+});
+observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+select.addEventListener('change',()=>{lang=select.value;try{localStorage.setItem('pv_lang',lang)}catch(e){}update()});
+update();
 })();
 </script>
 </body>
